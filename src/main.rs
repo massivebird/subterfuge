@@ -7,11 +7,7 @@
 // I'm still unsure if this data is separate from Steam profile page data.
 
 use game::Game;
-use std::{
-    fs::read_to_string,
-    thread,
-    time::Duration
-};
+use std::{fs::read_to_string, thread, time::Duration};
 
 mod game;
 
