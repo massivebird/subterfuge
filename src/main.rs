@@ -32,14 +32,14 @@ fn main() {
     let mut response_cache = String::new();
 
     loop {
-        log("Sleeping...");
-        std::thread::sleep(std::time::Duration::new(10, 0));
         let response = request.try_clone().unwrap().send().unwrap();
         let response_text = response.text().unwrap();
 
         if response_cache.is_empty() {
             response_cache = response_text;
-            log("Updated response cache");
+            log("Initialized response cache");
+            log("Sleeping...");
+            std::thread::sleep(std::time::Duration::new(10, 0));
             continue;
         }
 
@@ -49,6 +49,16 @@ fn main() {
 
         let mut parsed = json::parse(&response_text).unwrap();
 
+        let games: Vec<Game> = parsed["response"]["games"]
+            .members()
+            .into_iter()
+            .map(|g| Game::new(
+                g["appid"].as_u32().unwrap(),
+                g["playtime_forever"].as_u32().unwrap()
+            ))
+            .collect();
+        ;
+
         // this ISN'T the latest game rn. I think they are ordered
         // by playtime_forever descending.
         let latest_game = &parsed["response"]["games"].pop();
@@ -56,10 +66,24 @@ fn main() {
         let playtime = latest_game["playtime_forever"].as_u32().unwrap();
 
         log(&format!("Currently playing: {game_name}: Total playtime: {playtime}"));
+        log("Sleeping...");
+        std::thread::sleep(std::time::Duration::new(10, 0));
     }
 }
 
 fn log(msg: &str) {
     let now = chrono::Local::now().format("%H:%M:%S").to_string();
     println!("[{now}]: {msg}");
+}
+
+#[derive(Debug)]
+struct Game {
+    app_id: u32,
+    playtime_forever: u32,
+}
+
+impl Game {
+    fn new(app_id: u32, playtime_forever: u32) -> Self {
+        Self { app_id, playtime_forever }
+    }
 }
