@@ -48,7 +48,7 @@ fn main() {
             continue;
         }
 
-        // games are unchanged since last cache, nothing to report
+        // if games are unchanged since last cache, nothing to report
         if games.iter().all(|g| games_cache.iter().any(|o| o == g)) {
             continue;
         }
