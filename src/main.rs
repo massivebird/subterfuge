@@ -1,16 +1,10 @@
 // !! Critical knowledge !!
 //
-// My testing demonstrates that Steam doesn't update playtime accessible via
-// the web API until _after a session._
+// Steam updates data returned by the API:
+// 1) When a game session ends, and
+// 2) Every 30 minutes a game session is active.
 //
-// This doesn't totally invalidate the use cases for this program; it moreso
-// affects how I conduct tests in the future.
-//
-// Besides, maybe there is are playtime thresholds at which Steam updates
-// the web API values, such as every hour a session is live.
-//
-// Also, I should compare these values to those displayed on the front-facing
-// Steam profile page.
+// I'm still unsure if this data is separate from Steam profile page data.
 
 use game::Game;
 use std::fs::read_to_string;
