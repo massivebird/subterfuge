@@ -22,53 +22,49 @@ fn main() {
     let steam_id = "76561198748465236";
 
     let client = reqwest::blocking::Client::new();
-    let request = client.get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
-        .query(&[
-            ("key", api_key),
-            ("steamid", steam_id),
-            ("format", "json"),
-        ]);
+    let request = client
+        .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
+        .query(&[("key", api_key), ("steamid", steam_id), ("format", "json")]);
 
     let mut games_cache: Vec<Game> = Vec::new();
 
     loop {
+        std::thread::sleep(std::time::Duration::new(10, 0));
         let response = request.try_clone().unwrap().send().unwrap();
 
-        let parsed = json::parse(&response.text().unwrap()).unwrap();
-
-        let games: Vec<Game> = parsed["response"]["games"]
+        let games: Vec<Game> = json::parse(&response.text().unwrap()).unwrap()["response"]["games"]
             .members()
-            .map(|g| Game::new(
-                g["name"].to_string(),
-                g["appid"].as_u32().unwrap(),
-                g["playtime_forever"].as_u32().unwrap()
-            ))
+            .map(|g| {
+                Game::new(
+                    g["name"].to_string(),
+                    g["appid"].as_u32().unwrap(),
+                    g["playtime_forever"].as_u32().unwrap(),
+                )
+            })
             .collect();
 
         if games_cache.is_empty() {
             games_cache = games;
-            log("Initialized games cache");
-            log("Sleeping...");
-            std::thread::sleep(std::time::Duration::new(10, 0));
             continue;
         }
 
+        // games are unchanged since last cache, nothing to report
         if games.iter().all(|g| games_cache.iter().any(|o| o == g)) {
-            log("Games cache is unchanged.");
-            log("Sleeping...");
-            std::thread::sleep(std::time::Duration::new(10, 0));
             continue;
         }
 
-        log("Detected a change in API response.");
+        let latest_game: &Game = games
+            .iter()
+            .find(|&g| !games_cache.iter().any(|o| o == g))
+            .unwrap();
 
-        let latest_game = games.iter().find(|&g| !games_cache.iter().any(|o| o == g)).unwrap();
         let game_name = &latest_game.name;
         let playtime = latest_game.playtime_forever;
 
-        log(&format!("Currently playing: {game_name}: Total playtime: {playtime}"));
-        log("Sleeping...");
-        std::thread::sleep(std::time::Duration::new(10, 0));
+        log(&format!(
+            "User has been playing {game_name}. Total playtime: {playtime}"
+        ));
+        games_cache = games;
     }
 }
 
@@ -86,7 +82,11 @@ struct Game {
 
 impl Game {
     const fn new(name: String, app_id: u32, playtime_forever: u32) -> Self {
-        Self { name, app_id, playtime_forever }
+        Self {
+            name,
+            app_id,
+            playtime_forever,
+        }
     }
 }
 
