@@ -8,8 +8,10 @@
 
 use game::Game;
 use std::{fs::read_to_string, thread, time::Duration};
+use user::User;
 
 mod game;
+mod user;
 
 fn main() {
     let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
@@ -17,6 +19,9 @@ fn main() {
 
     // mine: 76561198748465236
     let steam_id = "76561198748465236";
+    let user = User::new(api_key, steam_id);
+    log(&format!("Initialized user {user}"));
+    let persona_name = &user.persona_name;
 
     let request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
@@ -66,7 +71,7 @@ fn main() {
         let delta_playtime = new_playtime - prev_playtime;
 
         log(&format!(
-            "User has been playing {game_name}. Played for {delta_playtime} minute. Total of {new_playtime} minutes."
+            "{persona_name} has been playing {game_name}. Played for {delta_playtime} minute(s). Total of {new_playtime} minute(s)."
         ));
 
         games_cache = games;
