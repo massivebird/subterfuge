@@ -1,3 +1,17 @@
+// !! Critical knowledge !!
+//
+// My testing demonstrates that Steam doesn't update playtime accessible via
+// the web API until _after a session._
+//
+// This doesn't totally invalidate the use cases for this program; it moreso
+// affects how I conduct tests in the future.
+//
+// Besides, maybe there is are playtime thresholds at which Steam updates
+// the web API values, such as every hour a session is live.
+//
+// Also, I should compare these values to those displayed on the front-facing
+// Steam profile page.
+
 use std::fs::read_to_string;
 
 fn main() {
@@ -15,28 +29,25 @@ fn main() {
             ("format", "json"),
         ]);
 
-    let mut response_cache: Option<reqwest::blocking::Response> = None;
-
-    let update_response_cache = |r: reqwest::blocking::Response| {
-        response_cache = Some(r);
-        log("Updated response cache");
-    };
+    let mut response_cache = String::new();
 
     loop {
-        std::thread::sleep(std::time::Duration::new(20, 0));
+        log("Sleeping...");
+        std::thread::sleep(std::time::Duration::new(10, 0));
         let response = request.try_clone().unwrap().send().unwrap();
+        let response_text = response.text().unwrap();
 
-        if response_cache.is_none() {
-            response_cache = Some(response);
+        if response_cache.is_empty() {
+            response_cache = response_text;
             log("Updated response cache");
             continue;
         }
 
-        if &response.text().unwrap() == &response_cache.unwrap().text().unwrap() { continue }
+        if response_text == response_cache { continue }
 
         log("Response has changed!");
 
-        let mut parsed = json::parse(&response.text().unwrap()).unwrap();
+        let mut parsed = json::parse(&response_text).unwrap();
 
         // this ISN'T the latest game rn. I think they are ordered
         // by playtime_forever descending.
