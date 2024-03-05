@@ -63,11 +63,18 @@ fn main() {
             .find(|&g| !games_cache.iter().any(|o| o == g))
             .unwrap();
 
+        let prev_playtime = games_cache
+            .iter()
+            .find(|g| g.app_id == latest_game.app_id)
+            .unwrap()
+            .playtime_forever;
+
         let game_name = &latest_game.name;
-        let playtime = latest_game.playtime_forever;
+        let new_playtime = latest_game.playtime_forever;
+        let delta_playtime = new_playtime - prev_playtime;
 
         log(&format!(
-            "User has been playing {game_name}. Total playtime: {playtime}"
+            "User has been playing {game_name}. Played for {delta_playtime} minute. Total of {new_playtime} minutes."
         ));
 
         games_cache = games;
