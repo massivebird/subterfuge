@@ -12,7 +12,12 @@
 // Also, I should compare these values to those displayed on the front-facing
 // Steam profile page.
 
+use game::Game;
 use std::fs::read_to_string;
+use std::thread;
+use std::time::Duration;
+
+mod game;
 
 fn main() {
     let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
@@ -21,15 +26,14 @@ fn main() {
     // mine: 76561198748465236
     let steam_id = "76561198748465236";
 
-    let client = reqwest::blocking::Client::new();
-    let request = client
+    let request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
         .query(&[("key", api_key), ("steamid", steam_id), ("format", "json")]);
 
     let mut games_cache: Vec<Game> = Vec::new();
 
     loop {
-        std::thread::sleep(std::time::Duration::new(10, 0));
+        thread::sleep(Duration::new(10 /* secs */, 0 /* nanos */));
         let response = request.try_clone().unwrap().send().unwrap();
 
         let games: Vec<Game> = json::parse(&response.text().unwrap()).unwrap()["response"]["games"]
@@ -53,6 +57,7 @@ fn main() {
             continue;
         }
 
+        // find the discrepant game that corresponds to none in the cache
         let latest_game: &Game = games
             .iter()
             .find(|&g| !games_cache.iter().any(|o| o == g))
@@ -64,6 +69,7 @@ fn main() {
         log(&format!(
             "User has been playing {game_name}. Total playtime: {playtime}"
         ));
+
         games_cache = games;
     }
 }
@@ -71,27 +77,4 @@ fn main() {
 fn log(msg: &str) {
     let now = chrono::Local::now().format("%H:%M:%S").to_string();
     println!("[{now}]: {msg}");
-}
-
-#[derive(Debug)]
-struct Game {
-    name: String,
-    app_id: u32,
-    playtime_forever: u32,
-}
-
-impl Game {
-    const fn new(name: String, app_id: u32, playtime_forever: u32) -> Self {
-        Self {
-            name,
-            app_id,
-            playtime_forever,
-        }
-    }
-}
-
-impl PartialEq<Self> for Game {
-    fn eq(&self, other: &Self) -> bool {
-        other.app_id == self.app_id && other.playtime_forever == self.playtime_forever
-    }
 }
