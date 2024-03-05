@@ -29,41 +29,42 @@ fn main() {
             ("format", "json"),
         ]);
 
-    let mut response_cache = String::new();
+    let mut games_cache: Vec<Game> = Vec::new();
 
     loop {
         let response = request.try_clone().unwrap().send().unwrap();
-        let response_text = response.text().unwrap();
 
-        if response_cache.is_empty() {
-            response_cache = response_text;
-            log("Initialized response cache");
+        let parsed = json::parse(&response.text().unwrap()).unwrap();
+
+        let games: Vec<Game> = parsed["response"]["games"]
+            .members()
+            .map(|g| Game::new(
+                g["name"].to_string(),
+                g["appid"].as_u32().unwrap(),
+                g["playtime_forever"].as_u32().unwrap()
+            ))
+            .collect();
+
+        if games_cache.is_empty() {
+            games_cache = games;
+            log("Initialized games cache");
             log("Sleeping...");
             std::thread::sleep(std::time::Duration::new(10, 0));
             continue;
         }
 
-        if response_text == response_cache { continue }
+        if games.iter().all(|g| games_cache.iter().any(|o| o == g)) {
+            log("Games cache is unchanged.");
+            log("Sleeping...");
+            std::thread::sleep(std::time::Duration::new(10, 0));
+            continue;
+        }
 
-        log("Response has changed!");
+        log("Detected a change in API response.");
 
-        let mut parsed = json::parse(&response_text).unwrap();
-
-        let games: Vec<Game> = parsed["response"]["games"]
-            .members()
-            .into_iter()
-            .map(|g| Game::new(
-                g["appid"].as_u32().unwrap(),
-                g["playtime_forever"].as_u32().unwrap()
-            ))
-            .collect();
-        ;
-
-        // this ISN'T the latest game rn. I think they are ordered
-        // by playtime_forever descending.
-        let latest_game = &parsed["response"]["games"].pop();
-        let game_name = latest_game["name"].to_string();
-        let playtime = latest_game["playtime_forever"].as_u32().unwrap();
+        let latest_game = games.iter().find(|&g| !games_cache.iter().any(|o| o == g)).unwrap();
+        let game_name = &latest_game.name;
+        let playtime = latest_game.playtime_forever;
 
         log(&format!("Currently playing: {game_name}: Total playtime: {playtime}"));
         log("Sleeping...");
@@ -78,12 +79,19 @@ fn log(msg: &str) {
 
 #[derive(Debug)]
 struct Game {
+    name: String,
     app_id: u32,
     playtime_forever: u32,
 }
 
 impl Game {
-    fn new(app_id: u32, playtime_forever: u32) -> Self {
-        Self { app_id, playtime_forever }
+    const fn new(name: String, app_id: u32, playtime_forever: u32) -> Self {
+        Self { name, app_id, playtime_forever }
+    }
+}
+
+impl PartialEq<Self> for Game {
+    fn eq(&self, other: &Self) -> bool {
+        other.app_id == self.app_id && other.playtime_forever == self.playtime_forever
     }
 }
