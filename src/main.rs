@@ -7,6 +7,7 @@
 // I'm still unsure if this data is separate from Steam profile page data.
 
 use game::Game;
+use std::io::BufRead;
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
 
@@ -14,13 +15,13 @@ mod game;
 mod user;
 
 fn main() {
-    // mine: 76561198748465236
-    let steam_ids: Vec<String> = vec![
-        "76561198748465236".to_owned(),
-    ];
+    let file = std::fs::File::open("steam_ids.csv").unwrap();
+    let steam_ids = std::io::BufReader::new(file).lines();
 
     for id in steam_ids {
-        std::thread::spawn(move || analyze_user(&id));
+        std::thread::spawn(move || analyze_user(&id.unwrap()));
+        // stagger threads
+        thread::sleep(Duration::new(3 /* secs */, 0 /* nanos */));
     }
 
     // let those threads do their thing :3
@@ -42,8 +43,12 @@ fn analyze_user(steam_id: &str) {
         let mut games_cache: Vec<Game> = Vec::new();
 
         loop {
-            thread::sleep(Duration::new(10 /* secs */, 0 /* nanos */));
-            let response = request.try_clone().unwrap().send().unwrap();
+            thread::sleep(Duration::new(40 /* secs */, 0 /* nanos */));
+
+            let Ok(response) = request.try_clone().unwrap().send() else {
+                log(&format!("WARNING: request for {user} failed."));
+                continue;
+            };
 
             let games: Vec<Game> = json::parse(&response.text().unwrap()).unwrap()["response"]["games"]
                 .members()
@@ -93,5 +98,5 @@ fn analyze_user(steam_id: &str) {
 
 fn log(msg: &str) {
     let now = chrono::Local::now().format("%H:%M:%S").to_string();
-    println!("[{now}]: {msg}");
+    println!("[{now}] {msg}");
 }
