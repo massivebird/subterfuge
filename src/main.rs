@@ -14,9 +14,6 @@ mod game;
 mod user;
 
 fn main() {
-    let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
-    let api_key = api_key.trim();
-
     // mine: 76561198748465236
     let steam_ids: Vec<String> = vec![
         "76561198748465236".to_owned(),
