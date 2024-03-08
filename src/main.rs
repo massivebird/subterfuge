@@ -32,7 +32,7 @@ fn analyze_user(steam_id: &str) {
     let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
     let api_key = api_key.trim();
     loop {
-        let user = User::new(&api_key, steam_id);
+        let user = User::new(api_key, steam_id);
         log(&format!("Initialized user {user}"));
         let persona_name = &user.persona_name;
 
@@ -77,20 +77,27 @@ fn analyze_user(steam_id: &str) {
                 .iter()
                 .find(|&g| !games_cache.iter().any(|o| o == g))
                 .unwrap();
-
-            let prev_playtime = games_cache
-                .iter()
-                .find(|g| g.app_id == latest_game.app_id)
-                .unwrap()
-            .playtime_forever;
-
             let game_name = &latest_game.name;
-            let new_total_playtime = latest_game.playtime_forever;
-            let delta_total_playtime = new_total_playtime - prev_playtime;
+            let total_playtime = latest_game.playtime_forever;
 
-            log(&format!(
-            "{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {new_total_playtime} minute(s)."
-        ));
+            // this game was cached only if it has been played in the last two weeks;
+            // otherwise, we have no previous playtime to compare to.
+            let Some(latest_game_cached) =
+                games_cache.iter().find(|g| g.app_id == latest_game.app_id)
+            else {
+                log(
+                    &format!("{persona_name} has been playing {game_name} for the first time in the last two weeks. Total of {total_playtime} minute(s).")
+               );
+                games_cache = games;
+                continue;
+            };
+
+            let prev_playtime = latest_game_cached.playtime_forever;
+            let delta_total_playtime = total_playtime - prev_playtime;
+
+            log(
+                &format!("{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {total_playtime} minute(s).")
+            );
 
             games_cache = games;
         }
