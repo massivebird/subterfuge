@@ -50,7 +50,8 @@ fn analyze_user(steam_id: &str) {
                 continue;
             };
 
-            let games: Vec<Game> = json::parse(&response.text().unwrap()).unwrap()["response"]["games"]
+            let games: Vec<Game> = json::parse(&response.text().unwrap()).unwrap()["response"]
+                ["games"]
                 .members()
                 .map(|g| {
                     Game::new(
@@ -84,11 +85,11 @@ fn analyze_user(steam_id: &str) {
             .playtime_forever;
 
             let game_name = &latest_game.name;
-            let new_playtime = latest_game.playtime_forever;
-            let delta_playtime = new_playtime - prev_playtime;
+            let new_total_playtime = latest_game.playtime_forever;
+            let delta_total_playtime = new_total_playtime - prev_playtime;
 
             log(&format!(
-            "{persona_name} has been playing {game_name}. Played for {delta_playtime} minute(s). Total of {new_playtime} minute(s)."
+            "{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {new_total_playtime} minute(s)."
         ));
 
             games_cache = games;
