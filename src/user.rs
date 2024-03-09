@@ -7,7 +7,7 @@ impl User {
     pub fn new(api_key: &str, steam_id: &str) -> Self {
         let request = reqwest::blocking::Client::new()
             .get("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/")
-            .query(&[("key", api_key), ("steamids", steam_id), ("format", "json")]);
+            .query(&[("key", api_key.trim()), ("steamids", steam_id.trim()), ("format", "json")]);
 
         let response = request.try_clone().unwrap().send().unwrap();
 
