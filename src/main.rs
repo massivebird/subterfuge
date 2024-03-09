@@ -43,7 +43,7 @@ fn analyze_user(steam_id: &str) {
         let mut games_cache: Vec<Game> = Vec::new();
 
         loop {
-            thread::sleep(Duration::new(40 /* secs */, 0 /* nanos */));
+            thread::sleep(Duration::new(90 /* secs */, 0 /* nanos */));
 
             let Ok(response) = request.try_clone().unwrap().send() else {
                 log(&format!("WARNING: request for {user} failed."));
