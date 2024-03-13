@@ -47,7 +47,7 @@ fn analyze_user(steam_id: &str) {
     let user = User::new(api_key, steam_id);
     let persona_name = &user.persona_name;
 
-    log!("Initialized user {user}");
+    log!("User initialized: {user}");
 
     // Used to calculate game session length
     let mut games_cache: Vec<Game> = Vec::new();
@@ -103,7 +103,7 @@ fn analyze_user(steam_id: &str) {
         // otherwise, we have no previous playtime to compare to.
         let Some(latest_game_cached) = games_cache.iter().find(|g| g.app_id == latest_game.app_id)
         else {
-            log!("{persona_name} has been playing {game_name} for the first time in the last two weeks. Total of {total_playtime} minute(s).");
+            log!("Activity detected for {persona_name}. Game: {game_name}. First session in two weeks. Total: {total_playtime} min.");
             games_cache = games;
             continue;
         };
@@ -111,7 +111,7 @@ fn analyze_user(steam_id: &str) {
         let prev_playtime = latest_game_cached.playtime_forever;
         let delta_total_playtime = total_playtime - prev_playtime;
 
-        log!("{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {total_playtime} minute(s).");
+        log!("Activity detected for {persona_name}. Game: {game_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
 
         games_cache = games;
     }
