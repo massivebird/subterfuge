@@ -26,6 +26,13 @@ fn main() {
     std::thread::park();
 }
 
+macro_rules! log {
+    ($($msg:tt)*) => {
+        print!("[{}] ", chrono::Local::now().format("%H:%M:%S").to_string());
+        println!($($msg)*);
+    };
+}
+
 fn analyze_user(steam_id: &str) {
     let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
 
@@ -40,7 +47,7 @@ fn analyze_user(steam_id: &str) {
     let user = User::new(api_key, steam_id);
     let persona_name = &user.persona_name;
 
-    log(&format!("Initialized user {user}"));
+    log!("Initialized user {user}");
 
     // Used to calculate game session length
     let mut games_cache: Vec<Game> = Vec::new();
@@ -49,7 +56,7 @@ fn analyze_user(steam_id: &str) {
         thread::sleep(Duration::new(90 /* secs */, 0 /* nanos */));
 
         let Ok(response) = request.try_clone().unwrap().send() else {
-            log(&format!("WARNING: request for {user} failed."));
+            log!("WARNING: request for {user} failed.");
             continue;
         };
 
@@ -59,9 +66,7 @@ fn analyze_user(steam_id: &str) {
             // JSON parsing fails sometimes because HTML is returned instead.
             // Could be a request timeout. Let's find out!
             dbg!(response_text);
-            log(&format!(
-                "JSON parsing failed for {persona_name}. See above for details."
-            ));
+            log!("JSON parsing failed for {persona_name}. See above for details.");
             continue;
         };
 
@@ -98,9 +103,7 @@ fn analyze_user(steam_id: &str) {
         // otherwise, we have no previous playtime to compare to.
         let Some(latest_game_cached) = games_cache.iter().find(|g| g.app_id == latest_game.app_id)
         else {
-            log(
-                    &format!("{persona_name} has been playing {game_name} for the first time in the last two weeks. Total of {total_playtime} minute(s).")
-               );
+            log!("{persona_name} has been playing {game_name} for the first time in the last two weeks. Total of {total_playtime} minute(s).");
             games_cache = games;
             continue;
         };
@@ -108,15 +111,8 @@ fn analyze_user(steam_id: &str) {
         let prev_playtime = latest_game_cached.playtime_forever;
         let delta_total_playtime = total_playtime - prev_playtime;
 
-        log(
-                &format!("{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {total_playtime} minute(s).")
-            );
+        log!("{persona_name} has been playing {game_name}. Played for {delta_total_playtime} minute(s). Total of {total_playtime} minute(s).");
 
         games_cache = games;
     }
-}
-
-fn log(msg: &str) {
-    let now = chrono::Local::now().format("%H:%M:%S").to_string();
-    println!("[{now}] {msg}");
 }
