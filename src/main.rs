@@ -31,7 +31,11 @@ fn analyze_user(steam_id: &str) {
 
     let request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
-        .query(&[("key", api_key.trim()), ("steamid", steam_id.trim()), ("format", "json")]);
+        .query(&[
+            ("key", api_key.trim()),
+            ("steamid", steam_id.trim()),
+            ("format", "json"),
+        ]);
 
     let user = User::new(api_key, steam_id);
     let persona_name = &user.persona_name;
