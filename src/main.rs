@@ -28,8 +28,9 @@ fn main() {
 
 macro_rules! log {
     ($($msg:tt)*) => {
-        print!("[{}] ", chrono::Local::now().format("%H:%M:%S").to_string());
-        println!($($msg)*);
+        let date = chrono::Local::now().format("%H:%M:%S").to_string();
+        let msg = format!($($msg)*);
+        println!("[{date}] {msg}");
     };
 }
 
