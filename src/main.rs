@@ -91,7 +91,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
     let mut games_cache: Vec<Game> = Vec::new();
 
     loop {
-        thread::sleep(Duration::new(90 /* secs */, 0 /* nanos */));
+        thread::sleep(Duration::from_secs(90));
 
         let Ok(response) = request.try_clone().unwrap().send() else {
             log!("WARNING: request for {user} failed.");
