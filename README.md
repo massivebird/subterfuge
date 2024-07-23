@@ -27,3 +27,18 @@ Users are supplied to Subterfuge via a list of SteamIDs. There are numerous ways
 + Third party sites
   + [steamidfinder](https://www.steamidfinder.com/) 
   + [steamid.io](https://steamid.io/)
+
+## Configuration
+
+Here is a template for the YAML structure that subterfuge expects.
+
+```yaml
+# ~/.config/subterfuge/config.yaml
+
+users: # key under which all users are declared
+  first_user: # arbitrary label, can be whatever you want!
+    id: 76561198000000000 # steam ID
+  second_user:
+    id: 76561198000000001
+  # ...
+```
