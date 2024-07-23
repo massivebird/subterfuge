@@ -134,27 +134,27 @@ fn watch_user(api_key: &str, steam_id: &str) {
         // Find the game that:
         // (1) Isn't in the cache yet, or
         // (2) Is in the cache, but has a new total playtime.
-        let discrepant: &Game = games
+        let discrepants: Vec<&Game> = games
             .iter()
-            .find(|&g| !games_cache.iter().any(|o| o == g))
-            .unwrap();
-        let discrepant_name = &discrepant.name;
-        let total_playtime = discrepant.playtime_forever;
+            .filter(|&g| !games_cache.iter().any(|o| o == g))
+            .collect();
 
-        // If the discrepant game isn't in the cache, then this is the first
-        // session in the last two weeks. Cannot calculate session playtime.
-        let Some(discrepant_cached_ver) =
-            games_cache.iter().find(|g| g.app_id == discrepant.app_id)
-        else {
-            log::info!("{display_name} activity detected. Game: {discrepant_name}. First session in two weeks. Total: {total_playtime} min.");
-            games_cache = games;
-            continue;
-        };
+        for discr in discrepants {
+            let total_playtime = discr.playtime_forever;
 
-        let prev_playtime = discrepant_cached_ver.playtime_forever;
-        let delta_total_playtime = total_playtime - prev_playtime;
+            // If the discrepant game isn't in the cache, then this is the first
+            // session in the last two weeks. Cannot calculate session playtime.
+            let Some(discr_cached_ver) = games_cache.iter().find(|g| g.app_id == discr.app_id)
+            else {
+                log::info!("{display_name} activity detected. Game: {discr}. First session in two weeks. Total: {total_playtime} min.");
+                continue;
+            };
 
-        log::info!("{display_name} activity detected. Game: {discrepant_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
+            let prev_playtime = discr_cached_ver.playtime_forever;
+            let delta_total_playtime = total_playtime - prev_playtime;
+
+            log::info!("{display_name} activity detected. Game: {discr}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
+        }
 
         games_cache = games;
     }

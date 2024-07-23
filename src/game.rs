@@ -20,3 +20,9 @@ impl PartialEq<Self> for Game {
         other.app_id == self.app_id && other.playtime_forever == self.playtime_forever
     }
 }
+
+impl std::fmt::Display for Game {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
