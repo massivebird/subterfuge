@@ -57,7 +57,7 @@ fn analyze_user(api_key: &str, steam_id: &str) {
         ]);
 
     let user = User::new(api_key, steam_id);
-    let persona_name = &user.persona_name;
+    let persona_name = &user.display_name;
 
     log!("User initialized: {user}");
 

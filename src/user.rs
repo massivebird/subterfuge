@@ -1,6 +1,6 @@
 pub struct User {
     pub steam_id: String,
-    pub persona_name: String,
+    pub display_name: String,
 }
 
 impl User {
@@ -15,19 +15,19 @@ impl User {
 
         let response = request.try_clone().unwrap().send().unwrap();
 
-        let persona_name = json::parse(&response.text().unwrap()).unwrap()["response"]["players"]
+        let display_name = json::parse(&response.text().unwrap()).unwrap()["response"]["players"]
             [0]["personaname"]
             .to_string();
 
         Self {
             steam_id: steam_id.to_string(),
-            persona_name,
+            display_name,
         }
     }
 }
 
 impl std::fmt::Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.persona_name)
+        write!(f, "{}", self.display_name)
     }
 }
