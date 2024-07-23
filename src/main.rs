@@ -45,11 +45,13 @@ fn main() {
         api_key
     };
 
-    let Ok(file) = std::fs::File::open("steam_ids.csv") else {
-        panic!("Failed to open Steam IDs file.");
-    };
+    let steam_ids = {
+        let Ok(file) = std::fs::File::open("steam_ids.csv") else {
+            panic!("Failed to open Steam IDs file.");
+        };
 
-    let steam_ids = std::io::BufReader::new(file).lines();
+        std::io::BufReader::new(file).lines()
+    };
 
     // Thread scope waits for all children threads to finish.
     // The compiler knows that the variables above will outlive
