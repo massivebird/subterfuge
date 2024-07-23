@@ -38,6 +38,7 @@ Here is a template for the YAML structure that subterfuge expects.
 users: # key under which all users are declared
   first_user: # arbitrary label, can be whatever you want!
     id: 76561198_________ # steam ID
+    alias: "The First User" # optional alias that overrides user's profile name
   second_user:
     id: 76561198_________
   # ...
