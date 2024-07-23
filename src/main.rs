@@ -27,6 +27,9 @@ fn main() {
 
     let steam_ids = std::io::BufReader::new(file).lines();
 
+    // Thread scope waits for all children threads to finish.
+    // The compiler knows that the variables above will outlive
+    // these children threads, allowing us to pass refs to them.
     std::thread::scope(|scope| {
         let api_key_ref = &api_key;
 
