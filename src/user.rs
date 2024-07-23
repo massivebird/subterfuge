@@ -1,10 +1,13 @@
+use std::borrow;
+
 pub struct User {
     pub steam_id: String,
     pub display_name: String,
+    alias: Option<String>,
 }
 
 impl User {
-    pub fn new(api_key: &str, steam_id: &str) -> Self {
+    pub fn new(api_key: &str, steam_id: &str, alias: Option<&str>) -> Self {
         let request = reqwest::blocking::Client::new()
             .get("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/")
             .query(&[
@@ -33,12 +36,19 @@ impl User {
         Self {
             steam_id: steam_id.to_string(),
             display_name,
+            alias: alias.map(borrow::ToOwned::to_owned),
         }
     }
 }
 
 impl std::fmt::Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.display_name)
+        write!(
+            f,
+            "{}",
+            self.alias
+                .clone()
+                .unwrap_or_else(|| self.display_name.clone())
+        )
     }
 }

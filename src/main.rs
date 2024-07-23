@@ -8,6 +8,7 @@
 
 use clap::Arg;
 use game::Game;
+use std::string;
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
 use yaml_rust2::{Yaml, YamlLoader};
@@ -53,7 +54,7 @@ fn main() {
                 log::warn!("Defaulting to API key path: {default_path}");
                 default_path
             },
-            |path| path.to_string(),
+            string::ToString::to_string,
         );
 
         if std::fs::File::open(&api_key_path).is_err() {
@@ -69,7 +70,7 @@ fn main() {
         api_key
     };
 
-    let steam_ids: Vec<String> = {
+    let users: Vec<User> = {
         let config_path = matches.get_one::<String>("config").map_or_else(
             || {
                 let default_path =
@@ -77,7 +78,7 @@ fn main() {
                 log::warn!("Defaulting to config path: {default_path}");
                 default_path
             },
-            |path| path.to_string(),
+            string::ToString::to_string,
         );
 
         if std::fs::File::open(&config_path).is_err() {
@@ -96,7 +97,7 @@ fn main() {
             "Failed to locate `users` key in config file."
         );
 
-        let mut steam_ids = Vec::new();
+        let mut users = Vec::new();
 
         for (label, properties) in users_yaml.as_hash().unwrap() {
             let Some(label) = label.as_str() else {
@@ -107,12 +108,14 @@ fn main() {
                 panic!("Failed to process field `id` for user labeled `{label}`");
             };
 
-            steam_ids.push(steam_id.to_string());
+            let alias: Option<&str> = properties["alias"].as_str();
+
+            users.push(User::new(&api_key, &steam_id.to_string(), alias));
         }
 
         log::info!("Located configuration file successfully.");
 
-        steam_ids
+        users
     };
 
     // Thread scope waits for all children threads to finish.
@@ -121,14 +124,14 @@ fn main() {
     std::thread::scope(|scope| {
         let api_key_ref = &api_key;
 
-        for id in steam_ids {
-            scope.spawn(move || watch_user(api_key_ref, &id));
+        for user in &users {
+            scope.spawn(move || watch_user(api_key_ref, user));
         }
     });
 }
 
-fn watch_user(api_key: &str, steam_id: &str) {
-    let user = User::new(api_key, steam_id);
+fn watch_user(api_key: &str, user: &User) {
+    let steam_id = &user.steam_id;
     let display_name = &user.display_name;
 
     log::info!("Initialized user: {user}");
