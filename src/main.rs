@@ -27,6 +27,14 @@ fn main() {
             .help("Path to a file containing a Steam API key.")])
         .get_matches();
 
+    simplelog::TermLogger::init(
+        log::LevelFilter::Info,
+        simplelog::Config::default(),
+        simplelog::TerminalMode::Stdout,
+        simplelog::ColorChoice::Always,
+    )
+    .unwrap();
+
     let api_key = {
         let api_key_path = matches
             .get_one::<String>("api_key")
@@ -65,19 +73,11 @@ fn main() {
     });
 }
 
-macro_rules! log {
-    ($($msg:tt)*) => {
-        let date = chrono::Local::now().format("%H:%M:%S").to_string();
-        let msg = format!($($msg)*);
-        println!("[{date}] {msg}");
-    };
-}
-
 fn watch_user(api_key: &str, steam_id: &str) {
     let user = User::new(api_key, steam_id);
     let display_name = &user.display_name;
 
-    log!("User initialized: {user}");
+    log::info!("User initialized: {user}");
 
     let recent_games_request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
@@ -95,7 +95,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
         thread::sleep(Duration::from_secs(90));
 
         let Ok(response) = recent_games_request.try_clone().unwrap().send() else {
-            log!("WARNING: request for {user} failed.");
+            log::warn!("Failed to send API request for {user}");
             continue;
         };
 
@@ -104,8 +104,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
         let Ok(json_values) = json::parse(&response_text) else {
             // JSON parsing fails sometimes because HTML is returned instead.
             // Could be a request timeout. Let's find out!
-            dbg!(response_text);
-            log!("JSON parsing failed for {display_name}. See above for details.");
+            log::error!("JSON parsing failed for {display_name}: {response_text}");
             continue;
         };
 
@@ -147,7 +146,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
         let Some(discrepant_cached_ver) =
             games_cache.iter().find(|g| g.app_id == discrepant.app_id)
         else {
-            log!("Activity detected for {display_name}. Game: {discrepant_name}. First session in two weeks. Total: {total_playtime} min.");
+            log::info!("{display_name} activity detected. Game: {discrepant_name}. First session in two weeks. Total: {total_playtime} min.");
             games_cache = games;
             continue;
         };
@@ -155,7 +154,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
         let prev_playtime = discrepant_cached_ver.playtime_forever;
         let delta_total_playtime = total_playtime - prev_playtime;
 
-        log!("Activity detected for {display_name}. Game: {discrepant_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
+        log::info!("{display_name} activity detected. Game: {discrepant_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
 
         games_cache = games;
     }
