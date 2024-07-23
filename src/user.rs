@@ -13,7 +13,18 @@ impl User {
                 ("format", "json"),
             ]);
 
-        let response = request.try_clone().unwrap().send().unwrap();
+        let response = loop {
+            let Ok(_resp) = request.try_clone().unwrap().send() else {
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                log::error!(
+                    "Failed to fetch data for user {}. Retrying...",
+                    &steam_id[0..5]
+                );
+                continue;
+            };
+
+            break _resp;
+        };
 
         let display_name = json::parse(&response.text().unwrap()).unwrap()["response"]["players"]
             [0]["personaname"]
