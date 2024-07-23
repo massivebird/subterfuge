@@ -30,7 +30,12 @@ Users are supplied to Subterfuge via a list of SteamIDs. There are numerous ways
 
 ## Configuration
 
-Here is a template for the YAML structure that subterfuge expects.
+Subterfuge is configured with a [YAML](https://en.wikipedia.org/wiki/YAML) file located at:
+
++ `$HOME/.config/subterfuge/config.yaml` (default), or
++ The path specified by `--config-file <PATH>`, if supplied (optional).
+
+Subterfuge expects the following structure inside the configuration file:
 
 ```yaml
 # ~/.config/subterfuge/config.yaml
