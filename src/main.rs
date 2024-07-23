@@ -144,7 +144,8 @@ fn watch_user(api_key: &str, steam_id: &str) {
 
         // If the discrepant game isn't in the cache, then this is the first
         // session in the last two weeks. Cannot calculate session playtime.
-        let Some(discrepant_cached_ver) = games_cache.iter().find(|g| g.app_id == discrepant.app_id)
+        let Some(discrepant_cached_ver) =
+            games_cache.iter().find(|g| g.app_id == discrepant.app_id)
         else {
             log!("Activity detected for {display_name}. Game: {discrepant_name}. First session in two weeks. Total: {total_playtime} min.");
             games_cache = games;
