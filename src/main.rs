@@ -64,6 +64,8 @@ fn main() {
             panic!("Failed to read API key file (the file DOES exist though).");
         };
 
+        log::info!("Located API key successfully.");
+
         api_key
     };
 
@@ -107,6 +109,8 @@ fn main() {
 
             steam_ids.push(steam_id.to_string());
         }
+
+        log::info!("Located configuration file successfully.");
 
         steam_ids
     };
