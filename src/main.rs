@@ -8,23 +8,33 @@
 
 use clap::Arg;
 use game::Game;
-use std::io::{BufRead, Lines};
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
+use yaml_rust2::Yaml;
 
 mod game;
 mod user;
 
 fn main() {
     let matches = clap::command!()
-        .args([Arg::new("api_key")
-            .short('k')
-            .long("api-key")
-            .alias("key")
-            .required(false)
-            .value_hint(clap::ValueHint::FilePath)
-            .value_name("PATH")
-            .help("Path to a file containing a Steam API key.")])
+        .args([
+            Arg::new("api_key")
+                .short('k')
+                .long("api-key")
+                .alias("key")
+                .required(false)
+                .value_hint(clap::ValueHint::FilePath)
+                .value_name("PATH")
+                .help("Path to a file containing a Steam API key."),
+            Arg::new("config")
+                .short('c')
+                .long("config-file")
+                .alias("config")
+                .required(false)
+                .value_hint(clap::ValueHint::FilePath)
+                .value_name("PATH")
+                .help("Path to the YAML config file."),
+        ])
         .get_matches();
 
     simplelog::TermLogger::init(
@@ -53,12 +63,44 @@ fn main() {
         api_key
     };
 
-    let steam_ids: Lines<_> = {
-        let Ok(file) = std::fs::File::open("steam_ids.csv") else {
-            panic!("Failed to open Steam IDs file.");
+    let steam_ids: Vec<String> = {
+        let config_path = matches
+            .get_one::<String>("config")
+            .map(String::to_owned)
+            .or_else(|| Some("config.yaml".to_string()))
+            .unwrap();
+
+        if std::fs::File::open(&config_path).is_err() {
+            panic!("Provided config path does not exist.");
         };
 
-        std::io::BufReader::new(file).lines()
+        let config_contents = std::fs::read_to_string(config_path).unwrap();
+
+        let yaml = yaml_rust2::YamlLoader::load_from_str(&config_contents)
+            .expect("Failed to parse configuration file.");
+
+        let users_yaml: &Yaml = &yaml[0]["users"];
+
+        assert!(
+            !users_yaml.is_badvalue(),
+            "Failed to locate `users` key in config file."
+        );
+
+        let mut steam_ids = Vec::new();
+
+        for (label, properties) in users_yaml.as_hash().unwrap().iter() {
+            let Some(label) = label.as_str() else {
+                panic!("Failed to process label: {label:?}");
+            };
+
+            let Some(steam_id) = properties["id"].as_i64() else {
+                panic!("Failed to process field `id` for user labeled `{}`", label);
+            };
+
+            steam_ids.push(steam_id.to_string());
+        }
+
+        steam_ids
     };
 
     // Thread scope waits for all children threads to finish.
@@ -68,7 +110,7 @@ fn main() {
         let api_key_ref = &api_key;
 
         for id in steam_ids {
-            scope.spawn(move || watch_user(api_key_ref, &id.unwrap()));
+            scope.spawn(move || watch_user(api_key_ref, &id));
         }
     });
 }

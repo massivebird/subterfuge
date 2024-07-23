@@ -14,7 +14,7 @@ impl User {
             ]);
 
         let response = loop {
-            let Ok(_resp) = request.try_clone().unwrap().send() else {
+            let Ok(resp) = request.try_clone().unwrap().send() else {
                 std::thread::sleep(std::time::Duration::from_secs(5));
                 log::error!(
                     "Failed to fetch data for user {}. Retrying...",
@@ -23,7 +23,7 @@ impl User {
                 continue;
             };
 
-            break _resp;
+            break resp;
         };
 
         let display_name = json::parse(&response.text().unwrap()).unwrap()["response"]["players"]
