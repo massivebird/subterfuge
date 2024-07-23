@@ -60,7 +60,7 @@ fn main() {
         let api_key_ref = &api_key;
 
         for id in steam_ids {
-            scope.spawn(move || analyze_user(api_key_ref, &id.unwrap()));
+            scope.spawn(move || watch_user(api_key_ref, &id.unwrap()));
         }
     });
 }
@@ -73,7 +73,7 @@ macro_rules! log {
     };
 }
 
-fn analyze_user(api_key: &str, steam_id: &str) {
+fn watch_user(api_key: &str, steam_id: &str) {
     let request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
         .query(&[
