@@ -74,7 +74,12 @@ macro_rules! log {
 }
 
 fn watch_user(api_key: &str, steam_id: &str) {
-    let request = reqwest::blocking::Client::new()
+    let user = User::new(api_key, steam_id);
+    let display_name = &user.display_name;
+
+    log!("User initialized: {user}");
+
+    let recent_games_request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
         .query(&[
             ("key", api_key.trim()),
@@ -82,74 +87,74 @@ fn watch_user(api_key: &str, steam_id: &str) {
             ("format", "json"),
         ]);
 
-    let user = User::new(api_key, steam_id);
-    let persona_name = &user.display_name;
-
-    log!("User initialized: {user}");
-
+    // A persistent collection of recently played games.
     // Used to calculate game session length
     let mut games_cache: Vec<Game> = Vec::new();
 
     loop {
         thread::sleep(Duration::from_secs(90));
 
-        let Ok(response) = request.try_clone().unwrap().send() else {
+        let Ok(response) = recent_games_request.try_clone().unwrap().send() else {
             log!("WARNING: request for {user} failed.");
             continue;
         };
 
         let response_text: String = response.text().unwrap();
 
-        let Ok(parsed) = json::parse(&response_text) else {
+        let Ok(json_values) = json::parse(&response_text) else {
             // JSON parsing fails sometimes because HTML is returned instead.
             // Could be a request timeout. Let's find out!
             dbg!(response_text);
-            log!("JSON parsing failed for {persona_name}. See above for details.");
+            log!("JSON parsing failed for {display_name}. See above for details.");
             continue;
         };
 
-        let games: Vec<Game> = parsed["response"]["games"]
+        let games: Vec<Game> = json_values["response"]["games"]
             .members()
-            .map(|g| {
+            .map(|game_json| {
                 Game::new(
-                    g["name"].to_string(),
-                    g["appid"].as_u32().unwrap(),
-                    g["playtime_forever"].as_u32().unwrap(),
+                    game_json["name"].to_string(),
+                    game_json["appid"].as_u32().unwrap(),
+                    game_json["playtime_forever"].as_u32().unwrap(),
                 )
             })
             .collect();
 
+        // If the cache is empty, there is nothing to compare against.
         if games_cache.is_empty() {
             games_cache = games;
             continue;
         }
 
-        // if games are unchanged since last cache, nothing to report
+        // Continue if recently played games have not changed.
         if games.iter().all(|g| games_cache.iter().any(|o| o == g)) {
             continue;
         }
 
-        // find the discrepant game that corresponds to none in the cache
-        let latest_game: &Game = games
+        // Recently played games has changed!
+        // Find the game that:
+        // (1) Isn't in the cache yet, or
+        // (2) Is in the cache, but has a new total playtime.
+        let discrepant: &Game = games
             .iter()
             .find(|&g| !games_cache.iter().any(|o| o == g))
             .unwrap();
-        let game_name = &latest_game.name;
-        let total_playtime = latest_game.playtime_forever;
+        let discrepant_name = &discrepant.name;
+        let total_playtime = discrepant.playtime_forever;
 
-        // this game was cached only if it has been played in the last two weeks;
-        // otherwise, we have no previous playtime to compare to.
-        let Some(latest_game_cached) = games_cache.iter().find(|g| g.app_id == latest_game.app_id)
+        // If the discrepant game isn't in the cache, then this is the first
+        // session in the last two weeks. Cannot calculate session playtime.
+        let Some(discrepant_cached_ver) = games_cache.iter().find(|g| g.app_id == discrepant.app_id)
         else {
-            log!("Activity detected for {persona_name}. Game: {game_name}. First session in two weeks. Total: {total_playtime} min.");
+            log!("Activity detected for {display_name}. Game: {discrepant_name}. First session in two weeks. Total: {total_playtime} min.");
             games_cache = games;
             continue;
         };
 
-        let prev_playtime = latest_game_cached.playtime_forever;
+        let prev_playtime = discrepant_cached_ver.playtime_forever;
         let delta_total_playtime = total_playtime - prev_playtime;
 
-        log!("Activity detected for {persona_name}. Game: {game_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
+        log!("Activity detected for {display_name}. Game: {discrepant_name}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
 
         games_cache = games;
     }
