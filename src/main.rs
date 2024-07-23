@@ -6,6 +6,7 @@
 //
 // I'm still unsure if this data is separate from Steam profile page data.
 
+use clap::Arg;
 use game::Game;
 use std::io::BufRead;
 use std::{fs::read_to_string, thread, time::Duration};
@@ -15,14 +16,37 @@ mod game;
 mod user;
 
 fn main() {
-    let Ok(api_key) = read_to_string("steam_api_key.secret") else {
-        eprintln!("ERROR: missing API key file.");
-        return;
+    let matches = clap::command!()
+        .args([Arg::new("api_key")
+            .short('k')
+            .long("api-key")
+            .alias("key")
+            .required(false)
+            .value_hint(clap::ValueHint::FilePath)
+            .value_name("PATH")
+            .help("Path to a file containing a Steam API key.")])
+        .get_matches();
+
+    let api_key = {
+        let api_key_path = matches
+            .get_one::<String>("api_key")
+            .map(String::to_owned)
+            .or_else(|| Some("steam_api_key.secret".to_string()))
+            .unwrap();
+
+        if std::fs::File::open(&api_key_path).is_err() {
+            panic!("Provided API key path does not exist.");
+        }
+
+        let Ok(api_key) = read_to_string(&api_key_path) else {
+            panic!("Failed to read API key file (the file DOES exist though).");
+        };
+
+        api_key
     };
 
     let Ok(file) = std::fs::File::open("steam_ids.csv") else {
-        eprintln!("ERROR: failed to open Steam IDs file.");
-        return;
+        panic!("Failed to open Steam IDs file.");
     };
 
     let steam_ids = std::io::BufReader::new(file).lines();
