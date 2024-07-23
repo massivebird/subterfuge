@@ -131,7 +131,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
     let user = User::new(api_key, steam_id);
     let display_name = &user.display_name;
 
-    log::info!("User initialized: {user}");
+    log::info!("Initialized user: {user}");
 
     let recent_games_request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
@@ -158,7 +158,7 @@ fn watch_user(api_key: &str, steam_id: &str) {
         let Ok(json_values) = json::parse(&response_text) else {
             // JSON parsing fails sometimes because HTML is returned instead.
             // Could be a request timeout. Let's find out!
-            log::error!("JSON parsing failed for {display_name}: {response_text}");
+            log::error!("Failed parsing response for {display_name}: {response_text}");
             continue;
         };
 
@@ -200,14 +200,14 @@ fn watch_user(api_key: &str, steam_id: &str) {
             // session in the last two weeks. Cannot calculate session playtime.
             let Some(discr_cached_ver) = games_cache.iter().find(|g| g.app_id == discr.app_id)
             else {
-                log::info!("{display_name} activity detected. Game: {discr}. First session in two weeks. Total: {total_playtime} min.");
+                log::info!("Detected activity for {display_name}. Game: {discr}. First session in two weeks. Total: {total_playtime} min.");
                 continue;
             };
 
             let prev_playtime = discr_cached_ver.playtime_forever;
             let delta_total_playtime = total_playtime - prev_playtime;
 
-            log::info!("{display_name} activity detected. Game: {discr}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
+            log::info!("Detected activity for {display_name}. Game: {discr}. Session: {delta_total_playtime} min. Total: {total_playtime} min.");
         }
 
         games_cache = games;
