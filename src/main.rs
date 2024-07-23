@@ -10,7 +10,7 @@ use clap::Arg;
 use game::Game;
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
-use yaml_rust2::Yaml;
+use yaml_rust2::{Yaml, YamlLoader};
 
 mod game;
 mod user;
@@ -46,11 +46,15 @@ fn main() {
     .unwrap();
 
     let api_key = {
-        let api_key_path = matches
-            .get_one::<String>("api_key")
-            .map(String::to_owned)
-            .or_else(|| Some("steam_api_key.secret".to_string()))
-            .unwrap();
+        let api_key_path = matches.get_one::<String>("api_key").map_or_else(
+            || {
+                let default_path =
+                    std::env::var("HOME").unwrap() + "/.config/subterfuge/steam_api_key.secret";
+                log::warn!("Defaulting to API key path: {default_path}");
+                default_path
+            },
+            |path| path.to_string(),
+        );
 
         if std::fs::File::open(&api_key_path).is_err() {
             panic!("Provided API key path does not exist.");
@@ -64,19 +68,23 @@ fn main() {
     };
 
     let steam_ids: Vec<String> = {
-        let config_path = matches
-            .get_one::<String>("config")
-            .map(String::to_owned)
-            .or_else(|| Some("config.yaml".to_string()))
-            .unwrap();
+        let config_path = matches.get_one::<String>("config").map_or_else(
+            || {
+                let default_path =
+                    std::env::var("HOME").unwrap() + "/.config/subterfuge/config.yaml";
+                log::warn!("Defaulting to config path: {default_path}");
+                default_path
+            },
+            |path| path.to_string(),
+        );
 
         if std::fs::File::open(&config_path).is_err() {
-            panic!("Provided config path does not exist.");
+            panic!("Failed to locate config file at the provided path.");
         };
 
         let config_contents = std::fs::read_to_string(config_path).unwrap();
 
-        let yaml = yaml_rust2::YamlLoader::load_from_str(&config_contents)
+        let yaml = YamlLoader::load_from_str(&config_contents)
             .expect("Failed to parse configuration file.");
 
         let users_yaml: &Yaml = &yaml[0]["users"];
@@ -88,13 +96,13 @@ fn main() {
 
         let mut steam_ids = Vec::new();
 
-        for (label, properties) in users_yaml.as_hash().unwrap().iter() {
+        for (label, properties) in users_yaml.as_hash().unwrap() {
             let Some(label) = label.as_str() else {
                 panic!("Failed to process label: {label:?}");
             };
 
             let Some(steam_id) = properties["id"].as_i64() else {
-                panic!("Failed to process field `id` for user labeled `{}`", label);
+                panic!("Failed to process field `id` for user labeled `{label}`");
             };
 
             steam_ids.push(steam_id.to_string());
