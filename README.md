@@ -37,8 +37,8 @@ Here is a template for the YAML structure that subterfuge expects.
 
 users: # key under which all users are declared
   first_user: # arbitrary label, can be whatever you want!
-    id: 76561198000000000 # steam ID
+    id: 76561198_________ # steam ID
   second_user:
-    id: 76561198000000001
+    id: 76561198_________
   # ...
 ```
