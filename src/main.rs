@@ -8,7 +8,7 @@
 
 use clap::Arg;
 use game::Game;
-use std::io::BufRead;
+use std::io::{BufRead, Lines};
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
 
@@ -45,7 +45,7 @@ fn main() {
         api_key
     };
 
-    let steam_ids = {
+    let steam_ids: Lines<_> = {
         let Ok(file) = std::fs::File::open("steam_ids.csv") else {
             panic!("Failed to open Steam IDs file.");
         };
