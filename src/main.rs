@@ -15,15 +15,25 @@ mod game;
 mod user;
 
 fn main() {
-    let file = std::fs::File::open("steam_ids.csv").unwrap();
+    let Ok(api_key) = read_to_string("steam_api_key.secret") else {
+        eprintln!("ERROR: missing API key file.");
+        return;
+    };
+
+    let Ok(file) = std::fs::File::open("steam_ids.csv") else {
+        eprintln!("ERROR: failed to open Steam IDs file.");
+        return;
+    };
+
     let steam_ids = std::io::BufReader::new(file).lines();
 
-    for id in steam_ids {
-        std::thread::spawn(move || analyze_user(&id.unwrap()));
-    }
+    std::thread::scope(|scope| {
+        let api_key_ref = &api_key;
 
-    // let those threads do their thing :3
-    std::thread::park();
+        for id in steam_ids {
+            scope.spawn(move || analyze_user(api_key_ref, &id.unwrap()));
+        }
+    });
 }
 
 macro_rules! log {
@@ -34,9 +44,7 @@ macro_rules! log {
     };
 }
 
-fn analyze_user(steam_id: &str) {
-    let api_key = &read_to_string("/home/penguino/sandbox/steam_api_key").unwrap();
-
+fn analyze_user(api_key: &str, steam_id: &str) {
     let request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
         .query(&[
