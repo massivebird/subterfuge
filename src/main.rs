@@ -8,6 +8,7 @@
 
 use clap::Arg;
 use game::Game;
+use rand::prelude::*;
 use std::string;
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
@@ -148,11 +149,16 @@ fn watch_user(api_key: &str, user: &User) {
     // Used to calculate game session length
     let mut games_cache: Vec<Game> = Vec::new();
 
-    loop {
-        thread::sleep(Duration::from_secs(90));
+    // Sleeps for a "random" number of seconds.
+    // Staggers subroutines so they do not (always) make calls simultaneously.
+    let nap = || {
+        thread::sleep(Duration::from_secs(rand::thread_rng().gen_range(60..95)));
+    };
 
+    loop {
         let Ok(response) = recent_games_request.try_clone().unwrap().send() else {
             log::warn!("Failed to send API request for {user}");
+            nap();
             continue;
         };
 
@@ -162,6 +168,7 @@ fn watch_user(api_key: &str, user: &User) {
             // JSON parsing fails sometimes because HTML is returned instead.
             // Could be a request timeout. Let's find out!
             log::error!("Failed parsing response for {display_name}: {response_text}");
+            nap();
             continue;
         };
 
@@ -179,11 +186,13 @@ fn watch_user(api_key: &str, user: &User) {
         // If the cache is empty, there is nothing to compare against.
         if games_cache.is_empty() {
             games_cache = games;
+            nap();
             continue;
         }
 
         // Continue if recently played games have not changed.
         if games.iter().all(|g| games_cache.iter().any(|o| o == g)) {
+            nap();
             continue;
         }
 
@@ -204,6 +213,7 @@ fn watch_user(api_key: &str, user: &User) {
             let Some(discr_cached_ver) = games_cache.iter().find(|g| g.app_id == discr.app_id)
             else {
                 log::info!("Detected activity for {display_name}. Game: {discr}. First session in two weeks. Total: {total_playtime} min.");
+                nap();
                 continue;
             };
 
@@ -214,5 +224,6 @@ fn watch_user(api_key: &str, user: &User) {
         }
 
         games_cache = games;
+        nap();
     }
 }
