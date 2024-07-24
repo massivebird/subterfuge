@@ -1,4 +1,4 @@
-use std::borrow;
+use std::{borrow, thread};
 
 pub struct User {
     pub steam_id: String,
@@ -16,12 +16,17 @@ impl User {
                 ("format", "json"),
             ]);
 
-        let response = loop {
-            let Ok(resp) = request.try_clone().unwrap().send() else {
-                std::thread::sleep(std::time::Duration::from_secs(5));
+        let response_json = loop {
+            let Ok(Ok(resp)) = request
+                .try_clone()
+                .unwrap()
+                .send()
+                .map(|resp| json::parse(&resp.text().unwrap()))
+            else {
+                thread::sleep(std::time::Duration::from_secs(5));
                 log::error!(
-                    "Failed to fetch data for user {}. Retrying...",
-                    &steam_id[0..5]
+                    "Failed to fetch data for ID ending in {}. Retrying...",
+                    &steam_id[13..]
                 );
                 continue;
             };
@@ -29,9 +34,7 @@ impl User {
             break resp;
         };
 
-        let display_name = json::parse(&response.text().unwrap()).unwrap()["response"]["players"]
-            [0]["personaname"]
-            .to_string();
+        let display_name = response_json["response"]["players"][0]["personaname"].to_string();
 
         Self {
             steam_id: steam_id.to_string(),
