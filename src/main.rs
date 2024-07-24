@@ -94,13 +94,24 @@ fn main() {
                 panic!("Failed to process label: {label:?}");
             };
 
-            let Some(steam_id) = properties["id"].as_i64() else {
-                panic!("Failed to process field `id` for user labeled `{label}`");
+            let steam_id = {
+                let Some(raw_id) = properties["id"].as_i64() else {
+                    panic!("Failed to process field `id` for user labeled `{label}`");
+                };
+
+                let id_str = raw_id.to_string();
+
+                assert!(
+                    id_str.len() == 17,
+                    "Invalid Steam ID {raw_id}: expected 17 characters"
+                );
+
+                id_str
             };
 
             let alias: Option<&str> = properties["alias"].as_str();
 
-            users.push(User::new(&api_key, &steam_id.to_string(), alias));
+            users.push(User::new(&api_key, &steam_id, alias));
         }
 
         users
