@@ -96,7 +96,12 @@ fn main() {
 
         let mut users = Vec::new();
 
-        for (label, properties) in users_yaml.as_hash().unwrap() {
+        let Some(defined_users) = users_yaml.as_hash() else {
+            log::warn!("Aborting program: no users defined in config.");
+            return;
+        };
+
+        for (label, properties) in defined_users {
             let Some(label) = label.as_str() else {
                 panic!("Failed to process label: {label:?}");
             };
