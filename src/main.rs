@@ -75,26 +75,10 @@ fn main() {
     let api_key = dynamic_read("API key", "api_key", "steam_api_key.secret");
 
     let users: Vec<User> = {
-        let config_path = matches.get_one::<String>("config").map_or_else(
-            || {
-                let default_path =
-                    std::env::var("HOME").unwrap() + "/.config/subterfuge/config.yaml";
-                log::warn!("Defaulting to config path: {default_path}");
-                default_path
-            },
-            string::ToString::to_string,
-        );
-
-        if File::open(&config_path).is_err() {
-            panic!("Failed to locate config file at the provided path.");
-        };
-
-        let config_contents = std::fs::read_to_string(config_path).unwrap();
-
-        log::info!("Loaded configuration file successfully.");
+        let config_contents = dynamic_read("config", "config", "config.yaml");
 
         let yaml = YamlLoader::load_from_str(&config_contents)
-            .expect("Failed to parse configuration file.");
+            .expect("Failed to parse configuration file into YAML.");
 
         let users_yaml: &Yaml = &yaml[0]["users"];
 
