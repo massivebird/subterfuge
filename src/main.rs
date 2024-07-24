@@ -9,6 +9,7 @@
 use clap::Arg;
 use game::Game;
 use rand::prelude::*;
+use std::fs::File;
 use std::string;
 use std::{fs::read_to_string, thread, time::Duration};
 use user::User;
@@ -47,29 +48,31 @@ fn main() {
     )
     .unwrap();
 
-    let api_key = {
-        let api_key_path = matches.get_one::<String>("api_key").map_or_else(
+    let dynamic_read = |human_name: &str, arg_id: &str, file_name: &str| {
+        let absolute_path = matches.get_one::<String>(arg_id).map_or_else(
             || {
-                let default_path =
-                    std::env::var("HOME").unwrap() + "/.config/subterfuge/steam_api_key.secret";
-                log::warn!("Defaulting to API key path: {default_path}");
+                let home_dir = std::env::var("HOME").unwrap();
+                let default_path = format!("{home_dir}/.config/subterfuge/{file_name}");
+                log::warn!("Defaulting to {human_name} path: {default_path}");
                 default_path
             },
             string::ToString::to_string,
         );
 
-        if std::fs::File::open(&api_key_path).is_err() {
-            panic!("Provided API key path does not exist.");
+        if File::open(&absolute_path).is_err() {
+            panic!("Provided {human_name} path does not exist.");
         }
 
-        let Ok(api_key) = read_to_string(&api_key_path) else {
-            panic!("Failed to read API key file (the file DOES exist though).");
+        let Ok(file_contents) = read_to_string(&absolute_path) else {
+            panic!("Failed to read {human_name} file (the file DOES exist though).");
         };
 
-        log::info!("Loaded API key successfully.");
+        log::info!("Loaded {human_name} successfully.");
 
-        api_key
+        file_contents
     };
+
+    let api_key = dynamic_read("API key", "api_key", "steam_api_key.secret");
 
     let users: Vec<User> = {
         let config_path = matches.get_one::<String>("config").map_or_else(
@@ -82,7 +85,7 @@ fn main() {
             string::ToString::to_string,
         );
 
-        if std::fs::File::open(&config_path).is_err() {
+        if File::open(&config_path).is_err() {
             panic!("Failed to locate config file at the provided path.");
         };
 
