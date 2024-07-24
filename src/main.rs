@@ -48,6 +48,13 @@ fn main() {
     )
     .unwrap();
 
+    // Reads data from a file.
+    //
+    // # Arguments
+    //
+    // (1) Human readable name
+    // (2) clap argument ID corresponding to user-specified path
+    // (3) File name of default path relative to $HOME/.config/subterfuge
     let dynamic_read = |human_name: &str, arg_id: &str, file_name: &str| {
         let absolute_path = matches.get_one::<String>(arg_id).map_or_else(
             || {
