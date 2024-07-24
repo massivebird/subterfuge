@@ -65,7 +65,7 @@ fn main() {
             panic!("Failed to read API key file (the file DOES exist though).");
         };
 
-        log::info!("Located API key successfully.");
+        log::info!("Loaded API key successfully.");
 
         api_key
     };
@@ -86,6 +86,8 @@ fn main() {
         };
 
         let config_contents = std::fs::read_to_string(config_path).unwrap();
+
+        log::info!("Loaded configuration file successfully.");
 
         let yaml = YamlLoader::load_from_str(&config_contents)
             .expect("Failed to parse configuration file.");
@@ -112,8 +114,6 @@ fn main() {
 
             users.push(User::new(&api_key, &steam_id.to_string(), alias));
         }
-
-        log::info!("Located configuration file successfully.");
 
         users
     };
