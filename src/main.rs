@@ -200,10 +200,7 @@ fn watch_user(api_key: &str, user: &User) {
         // Find games that:
         // (1) Aren't in the cache yet, or
         // (2) Are in the cache, but have a new total playtime.
-        let discrepants: Vec<&Game> = games
-            .iter()
-            .filter(|&g| !games_cache.iter().any(|o| o == g))
-            .collect();
+        let discrepants: Vec<&Game> = games.iter().filter(|g| !games_cache.contains(g)).collect();
 
         for discr in discrepants {
             let total_playtime = discr.playtime_forever;
