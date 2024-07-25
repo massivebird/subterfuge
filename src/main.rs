@@ -92,6 +92,7 @@ fn main() {
         if let Some(user_ids) = matches.get_one::<String>("user_ids") {
             break 'block user_ids
                 .split(&[',', ' '])
+                .filter(|s| !s.is_empty()) // just in case
                 .map(|id| User::new(&api_key, id, None))
                 .collect();
         }
