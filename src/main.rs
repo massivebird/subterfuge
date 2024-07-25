@@ -138,7 +138,7 @@ fn watch_user(api_key: &str, user: &User) {
     let steam_id = &user.steam_id;
     let display_name = &user.display_name;
 
-    log::info!("Initialized user: {user}");
+    log::info!("Watching user: {user}");
 
     let recent_games_request = reqwest::blocking::Client::new()
         .get("http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/")
