@@ -1,4 +1,4 @@
-use std::{borrow, thread};
+use std::{borrow, process, thread};
 
 pub struct User {
     pub steam_id: String,
@@ -8,10 +8,10 @@ pub struct User {
 
 impl User {
     pub fn new(api_key: &str, steam_id: &str, alias: Option<&str>) -> Self {
-        assert!(
-            steam_id.len() == 17,
-            "Invalid Steam ID \"{steam_id}\": expected 17 characters"
-        );
+        if steam_id.len() != 17 {
+            log::error!("Invalid Steam ID \"{steam_id}\": expected 17 numeric characters");
+            process::exit(1);
+        }
 
         let request = reqwest::blocking::Client::new()
             .get("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/")

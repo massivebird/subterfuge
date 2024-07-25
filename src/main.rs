@@ -10,8 +10,8 @@ use clap::Arg;
 use game::Game;
 use rand::prelude::*;
 use std::fs::File;
-use std::string;
 use std::{fs::read_to_string, thread, time::Duration};
+use std::{process, string};
 use user::User;
 use yaml_rust2::{Yaml, YamlLoader};
 
@@ -74,11 +74,13 @@ fn main() {
         );
 
         if File::open(&absolute_path).is_err() {
-            panic!("Provided {human_name} path does not exist.");
+            log::error!("Provided {human_name} path does not exist.");
+            process::exit(1);
         }
 
         let Ok(file_contents) = read_to_string(&absolute_path) else {
-            panic!("Failed to read {human_name} file (the file DOES exist though).");
+            log::error!("Failed to read {human_name} file (the file DOES exist though).");
+            process::exit(1);
         };
 
         log::info!("Loaded {human_name} successfully.");
@@ -104,10 +106,10 @@ fn main() {
 
         let users_yaml: &Yaml = &yaml[0]["users"];
 
-        assert!(
-            !users_yaml.is_badvalue(),
-            "Failed to locate `users` key in config file."
-        );
+        if users_yaml.is_badvalue() {
+            log::error!("Failed to locate `users` key in config file.");
+            process::exit(1);
+        }
 
         let mut users = Vec::new();
 
@@ -120,12 +122,14 @@ fn main() {
 
         for (label, properties) in users_yaml.as_hash().unwrap() {
             let Some(label) = label.as_str() else {
-                panic!("Failed to process label: {label:?}");
+                log::error!("Failed to process label: {label:?}");
+                process::exit(1);
             };
 
             let steam_id = {
                 let Some(raw_id) = properties["id"].as_i64() else {
-                    panic!("Failed to process field `id` for user labeled `{label}`");
+                    log::error!("Failed to process field `id` for user labeled `{label}`");
+                    process::exit(1);
                 };
 
                 raw_id.to_string()
@@ -141,7 +145,7 @@ fn main() {
 
     if users.is_empty() {
         log::warn!("Aborting program: no users defined in config or arguments.");
-        std::process::exit(0);
+        process::exit(0);
     }
 
     // Thread scope waits for all children threads to finish.
