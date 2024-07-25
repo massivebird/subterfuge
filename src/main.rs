@@ -88,7 +88,14 @@ fn main() {
 
     let api_key = dynamic_read("API key", "api_key", "steam_api_key.secret");
 
-    let users: Vec<User> = {
+    let users: Vec<User> = 'block: {
+        if let Some(user_ids) = matches.get_one::<String>("user_ids") {
+            break 'block user_ids
+                .split(&[',', ' '])
+                .map(|id| User::new(&api_key, id, None))
+                .collect();
+        }
+
         let config_contents = dynamic_read("config", "config", "config.yaml");
 
         let yaml = YamlLoader::load_from_str(&config_contents)
