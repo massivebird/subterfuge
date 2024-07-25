@@ -6,7 +6,6 @@
 //
 // I'm still unsure if this data is separate from Steam profile page data.
 
-use clap::Arg;
 use game::Game;
 use rand::prelude::*;
 use std::fs::File;
@@ -15,37 +14,12 @@ use std::{process, string};
 use user::User;
 use yaml_rust2::{Yaml, YamlLoader};
 
+mod cli;
 mod game;
 mod user;
 
 fn main() {
-    let matches = clap::command!()
-        .args([
-            Arg::new("api_key")
-                .short('k')
-                .long("api-key")
-                .alias("key")
-                .required(false)
-                .value_hint(clap::ValueHint::FilePath)
-                .value_name("PATH")
-                .help("Path to a file containing a Steam API key."),
-            Arg::new("config")
-                .short('c')
-                .long("config-file")
-                .alias("config")
-                .required(false)
-                .value_hint(clap::ValueHint::FilePath)
-                .value_name("PATH")
-                .help("Path to the YAML config file."),
-            Arg::new("user_ids")
-                .long("user-ids")
-                .alias("users")
-                .conflicts_with("config")
-                .required(false)
-                .value_name("user-IDs")
-                .help("Comma-separated user IDs."),
-        ])
-        .get_matches();
+    let matches = cli::build_command().get_matches();
 
     simplelog::TermLogger::init(
         log::LevelFilter::Info,
