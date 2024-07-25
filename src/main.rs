@@ -59,9 +59,9 @@ fn main() {
     //
     // # Arguments
     //
-    // (1) Human readable name
-    // (2) clap argument ID corresponding to user-specified path
-    // (3) File name of default path relative to $HOME/.config/subterfuge
+    // (1) &str: human readable name (ex. "config file")
+    // (2) &str: clap argument ID corresponding to user-specified path (ex. "config_file")
+    // (3) &str: file name of default path relative to $HOME/.config/subterfuge (ex. "config.yaml")
     let dynamic_read = |human_name: &str, arg_id: &str, file_name: &str| {
         let absolute_path = matches.get_one::<String>(arg_id).map_or_else(
             || {
