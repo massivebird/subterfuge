@@ -111,12 +111,14 @@ fn main() {
 
         let mut users = Vec::new();
 
-        let Some(defined_users) = users_yaml.as_hash() else {
-            log::warn!("Aborting program: no users defined in config.");
-            return;
+        // I don't know how to iterate over yaml::as_hash() without
+        // unwrapping it, and that panics when unwrapping zero users.
+        // So if there are no users, we exit this block.
+        if users_yaml.as_hash().is_none() {
+            break 'block Vec::with_capacity(0);
         };
 
-        for (label, properties) in defined_users {
+        for (label, properties) in users_yaml.as_hash().unwrap() {
             let Some(label) = label.as_str() else {
                 panic!("Failed to process label: {label:?}");
             };
@@ -136,6 +138,11 @@ fn main() {
 
         users
     };
+
+    if users.is_empty() {
+        log::warn!("Aborting program: no users defined in config or arguments.");
+        std::process::exit(0);
+    }
 
     // Thread scope waits for all children threads to finish.
     // The compiler knows that the variables above will outlive
