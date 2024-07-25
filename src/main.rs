@@ -125,14 +125,7 @@ fn main() {
                     panic!("Failed to process field `id` for user labeled `{label}`");
                 };
 
-                let id_str = raw_id.to_string();
-
-                assert!(
-                    id_str.len() == 17,
-                    "Invalid Steam ID {raw_id}: expected 17 characters"
-                );
-
-                id_str
+                raw_id.to_string()
             };
 
             let alias: Option<&str> = properties["alias"].as_str();

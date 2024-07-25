@@ -8,6 +8,11 @@ pub struct User {
 
 impl User {
     pub fn new(api_key: &str, steam_id: &str, alias: Option<&str>) -> Self {
+        assert!(
+            steam_id.len() == 17,
+            "Invalid Steam ID \"{steam_id}\": expected 17 characters"
+        );
+
         let request = reqwest::blocking::Client::new()
             .get("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/")
             .query(&[
