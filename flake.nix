@@ -19,9 +19,11 @@
       {
         devShell = mkShell {
           buildInputs = [
-            rust-bin.stable.latest.default
+            cargo
             openssl
             pkg-config
+            rust-bin.stable.latest.default
+            rustc
           ];
         };
       }
