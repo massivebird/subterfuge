@@ -11,6 +11,7 @@ use rand::Rng;
 use std::fs::File;
 use std::{fs::read_to_string, thread, time::Duration};
 use std::{process, string};
+use time::UtcOffset;
 use user::User;
 use yaml_rust2::{Yaml, YamlLoader};
 
@@ -23,7 +24,9 @@ fn main() {
 
     simplelog::TermLogger::init(
         log::LevelFilter::Info,
-        simplelog::Config::default(),
+        simplelog::ConfigBuilder::new()
+            .set_time_offset(UtcOffset::current_local_offset().unwrap())
+            .build(),
         simplelog::TerminalMode::Stdout,
         simplelog::ColorChoice::Always,
     )
