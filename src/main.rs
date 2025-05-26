@@ -8,9 +8,11 @@
 
 use game::Game;
 use rand::Rng;
-use std::fs::File;
-use std::{fs::read_to_string, thread, time::Duration};
-use std::{process, string};
+use std::{
+    fs::{read_to_string, File},
+    process, string, thread,
+    time::Duration,
+};
 use time::UtcOffset;
 use user::User;
 use yaml_rust2::{Yaml, YamlLoader};
@@ -95,7 +97,7 @@ fn main() {
         // So if there are no users, we exit this block.
         if users_yaml.as_hash().is_none() {
             break 'block Vec::with_capacity(0);
-        };
+        }
 
         for (label, properties) in users_yaml.as_hash().unwrap() {
             let Some(label) = label.as_str() else {
